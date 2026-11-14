@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# next.js
+/.next/
+/out/
+/build
+
+# local env & data
+.env
+.env*.local
+/data
+/media
+/backups
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
