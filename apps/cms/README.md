@@ -12,12 +12,12 @@ Payload CMS 3 backend configured with SQLite (`@payloadcms/db-sqlite`), mounted 
 
 All commands resolve `DATABASE_URL` from root `.env` (or `apps/cms/.env`), defaulting to `file:./data/payload.db`:
 
-| Command                  | Description                                                                        |
-| :----------------------- | :--------------------------------------------------------------------------------- |
-| `pnpm db:backup [out]`   | Creates a consistent single-file SQLite snapshot via `VACUUM INTO` (`backups/`).   |
-| `pnpm db:restore [file]` | Runs `PRAGMA quick_check` on `[file]` (or newest in `backups/`) and restores it.   |
-| `pnpm db:clear`          | Deletes the configured SQLite database file and `-wal`/`-shm`/`-journal` sidecars. |
-| `pnpm db:check`          | Pushes & verifies current Payload collection schemas against the SQLite database.  |
+| Command                  | Description                                                                                |
+| :----------------------- | :----------------------------------------------------------------------------------------- |
+| `pnpm db:backup [out]`   | Creates a consistent single-file SQLite snapshot via `VACUUM INTO` (`backups/`).           |
+| `pnpm db:restore [file]` | Backs up current DB, runs `PRAGMA quick_check` on `[file]` (or latest), and restores it.   |
+| `pnpm db:clear`          | Confirms and deletes the local SQLite database file and `-wal`/`-shm`/`-journal` sidecars. |
+| `pnpm db:check`          | Pushes & verifies current Payload collection schemas against the SQLite database.          |
 
 > Stop running `pnpm dev` / `pnpm start` servers before running `pnpm db:clear` or `pnpm db:restore`. `pnpm db:backup` uses SQLite `VACUUM INTO`, which safely produces a self-contained snapshot even with WAL enabled.
 
@@ -32,7 +32,7 @@ pnpm migrate:create       # Creates a new Drizzle SQLite migration in src/migrat
 pnpm migrate              # Applies pending migrations
 ```
 
-Production startups run `prodMigrations` automatically via [`src/payload.config.ts`](./src/payload.config.ts).
+Production startups run `prodMigrations` automatically via [`src/payload.config.ts`](./src/payload.config.ts). Running `pnpm check` or `pnpm build` verifies that `src/migrations/` is up to date with your schemas.
 
 ---
 

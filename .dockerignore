@@ -7,6 +7,7 @@ apps/cms/.next
 apps/cms/media
 apps/cms/data
 apps/cms/backups
+.payload-secret
 apps/cms/test-results
 apps/cms/playwright-report
 apps/cms/blob-report

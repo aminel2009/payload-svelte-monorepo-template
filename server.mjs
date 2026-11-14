@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
 import { createRequire } from 'node:module';
@@ -32,14 +33,15 @@ process.env.PORT = String(port);
 // Resolve relative SQLite and media paths against apps/cms/ so dev, start, and CLI scripts
 // (pnpm migrate, pnpm db:check) always use the exact same database and media directory.
 function resolveCmsPaths() {
+	let dbFilePath = null;
 	const rawDbUrl = process.env.DATABASE_URL || 'file:./data/payload.db';
 	if (rawDbUrl.startsWith('file:')) {
 		const withoutPrefix = rawDbUrl.slice('file:'.length);
 		const [filePart, queryPart] = withoutPrefix.split('?');
-		if (filePart && filePart !== ':memory:' && !path.isAbsolute(filePart)) {
-			const absDb = path.resolve(cmsDir, filePart);
-			fs.mkdirSync(path.dirname(absDb), { recursive: true });
-			process.env.DATABASE_URL = `file:${absDb}${queryPart ? `?${queryPart}` : ''}`;
+		if (filePart && filePart !== ':memory:') {
+			dbFilePath = path.isAbsolute(filePart) ? filePart : path.resolve(cmsDir, filePart);
+			fs.mkdirSync(path.dirname(dbFilePath), { recursive: true });
+			process.env.DATABASE_URL = `file:${dbFilePath}${queryPart ? `?${queryPart}` : ''}`;
 		}
 	}
 	if (!process.env.MEDIA_DIR) {
@@ -47,9 +49,37 @@ function resolveCmsPaths() {
 	} else if (!path.isAbsolute(process.env.MEDIA_DIR)) {
 		process.env.MEDIA_DIR = path.resolve(cmsDir, process.env.MEDIA_DIR);
 	}
+	return dbFilePath;
 }
 
-resolveCmsPaths();
+function ensurePayloadSecret(dbFilePath) {
+	const configured = process.env.PAYLOAD_SECRET?.trim();
+	if (configured && configured !== 'YOUR_SECRET_HERE') {
+		return;
+	}
+
+	if (!dbFilePath) {
+		process.env.PAYLOAD_SECRET = crypto.randomBytes(32).toString('hex');
+		return;
+	}
+
+	const secretPath = path.join(path.dirname(dbFilePath), '.payload-secret');
+	if (fs.existsSync(secretPath)) {
+		const existing = fs.readFileSync(secretPath, 'utf8').trim();
+		if (existing) {
+			process.env.PAYLOAD_SECRET = existing;
+			return;
+		}
+	}
+
+	const generated = crypto.randomBytes(32).toString('hex');
+	fs.writeFileSync(secretPath, `${generated}\n`, { mode: 0o600 });
+	process.env.PAYLOAD_SECRET = generated;
+}
+
+const dbFilePath = resolveCmsPaths();
+const dbExisted = dbFilePath ? fs.existsSync(dbFilePath) : false;
+ensurePayloadSecret(dbFilePath);
 
 function isCmsRequest(rawUrl = '/') {
 	const pathname = rawUrl.split('?', 1)[0];
@@ -138,6 +168,9 @@ server.listen(...listenArgs, () => {
 	console.log(
 		`Ready on http://${displayHost}:${port} (Web: /, CMS: /_/admin, mode: ${isDev ? 'development' : 'production'})`
 	);
+	if (dbFilePath) {
+		console.log(`SQLite: ${dbFilePath} (${dbExisted ? 'existing' : 'new'})`);
+	}
 });
 
 async function shutdown(signal) {

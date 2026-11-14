@@ -5,8 +5,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
-    "check": "next typegen && tsc --noEmit && cross-env NODE_OPTIONS=--no-deprecation eslint . && prettier --check .",
+    "build": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/check-migrations.ts && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
+    "check": "next typegen && tsc --noEmit && cross-env NODE_OPTIONS=--no-deprecation eslint . && prettier --check . && cross-env NODE_OPTIONS=--no-deprecation tsx scripts/check-migrations.ts",
     "db:backup": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/db.ts backup",
     "db:check": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/check-db.ts",
     "db:clear": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/db.ts clear",

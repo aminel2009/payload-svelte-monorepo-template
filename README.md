@@ -1,6 +1,6 @@
 # Payload CMS 3 + SvelteKit 3 Monorepo Template (SQLite)
 
-Lightweight **pnpm** monorepo combining **Payload CMS 3** (with SQLite via `@payloadcms/db-sqlite`) and **SvelteKit 3** (Svelte 5 Runes, Tailwind CSS v4, typed GraphQL SDK, `@sveltejs/adapter-node`), designed for smaller sites (portfolios, landing pages, micro-apps) that run and deploy cleanly with `pnpm` or in a **single Docker container**.
+Lightweight **pnpm** monorepo combining **Payload CMS 3** (with SQLite via `@payloadcms/db-sqlite`) and **SvelteKit 3** (Svelte 5 Runes, Tailwind CSS v4, typed GraphQL SDK, `@sveltejs/adapter-node`), designed for smaller sites (portfolios, landing pages, micro-apps) that develop cleanly with `pnpm` and deploy in a **single Docker container**.
 
 ## Structure
 
@@ -20,10 +20,11 @@ Lightweight **pnpm** monorepo combining **Payload CMS 3** (with SQLite via `@pay
 Requires **Node.js ≥ 22.23** (or ≥ 24.22) and **pnpm**. No external database server or Docker container is required for local dev.
 
 ```bash
-cp .env.example .env   # Set PAYLOAD_SECRET (SQLite defaults to apps/cms/data/payload.db)
 pnpm install
 pnpm dev               # Starts Web (/) + CMS (/_/*) on one port (:3000)
 ```
+
+`.env` is optional (`cp .env.example .env` if you want to customize `PORT` or `DATABASE_URL`). SQLite defaults to `apps/cms/data/payload.db` and `PAYLOAD_SECRET` is auto-generated in `.payload-secret` next to the database if unset.
 
 - **Frontend (SvelteKit):** `http://localhost:3000`
 - **Payload Admin:** `http://localhost:3000/_/admin`
@@ -44,11 +45,11 @@ pnpm dev               # Starts Web (/) + CMS (/_/*) on one port (:3000)
    ```bash
    pnpm generate
    ```
-4. Before deploying schema changes to production, create a SQLite migration:
+4. When you add or edit Payload collections/fields, create a SQLite migration before committing or deploying:
    ```bash
    pnpm migrate:create
    ```
-   `apps/cms/src/payload.config.ts` wires `prodMigrations` from `apps/cms/src/migrations/`, so pending migrations are automatically applied when the production container starts.
+   `pnpm check` and `pnpm build` automatically verify that `apps/cms/src/migrations/` is in sync with your collections, and production container startup applies pending `prodMigrations` automatically.
 
 ---
 
@@ -60,9 +61,9 @@ pnpm dev               # Starts Web (/) + CMS (/_/*) on one port (:3000)
 | `pnpm build`            | Builds Next.js (`apps/cms`) and SvelteKit Node server (`apps/web`).        |
 | `pnpm start`            | Starts `server.mjs` (unified single-port production server on `:3000`).    |
 | `pnpm generate`         | Regenerates Payload types, import map, and SvelteKit GraphQL SDK.          |
-| `pnpm db:backup [out]`  | Creates an atomic SQLite snapshot in `apps/cms/backups/` (or `[out]`).     |
-| `pnpm db:restore [in]`  | Verifies and restores the SQLite DB from `[in]` (or the latest backup).    |
-| `pnpm db:clear`         | Deletes the local SQLite database file and `-wal`/`-shm`/`-journal` files. |
+| `pnpm db:backup [out]`  | Creates an atomic SQLite snapshot in `apps/cms/backups/` (or `[out]`).                     |
+| `pnpm db:restore [in]`  | Backs up current DB, verifies `[in]` (or latest backup), and restores it (dev only).       |
+| `pnpm db:clear`         | Prompts and deletes the local SQLite database file and sidecar files (dev only).           |
 | `pnpm db:check`         | Checks SQLite schema sync against Payload collections.                     |
 | `pnpm migrate:create`   | Creates a new Drizzle SQLite migration in `apps/cms/src/migrations/`.      |
 | `pnpm migrate`          | Runs pending migrations manually.                                          |
@@ -88,35 +89,24 @@ pnpm db:check                           # Syncs & verifies schema against Payloa
 
 ---
 
-## 4. Deployment
+## 4. Deployment (Docker)
 
-### Option A: Single Docker Container / Docker Compose
+Deploy the repository with Docker Compose or `Dockerfile`:
 
-1. Set a strong `PAYLOAD_SECRET` in `.env` (or your host/Coolify environment variables).
-2. Build and start the container:
-   ```bash
-   docker compose up -d --build
-   ```
-   Or build and run with Docker directly:
-   ```bash
-   docker build -t my-site .
-   docker run -d -p 3000:3000 \
-     -e PAYLOAD_SECRET="replace-with-strong-secret" \
-     -v payload_data:/app/data \
-     -v payload_media:/app/media \
-     my-site
-   ```
-3. Mount persistent storage at **`/app/data`** (SQLite database) and **`/app/media`** (uploaded media files).
-4. Expose port **`3000`**.
+```bash
+docker compose up -d --build
+```
 
-### Option B: Node.js / pnpm (VPS, Railway, Render, Fly.io)
+Or run `Dockerfile` directly on any Docker host or PaaS:
 
-- **Build command:**
-  ```bash
-  pnpm install --frozen-lockfile && pnpm build
-  ```
-- **Start command:**
-  ```bash
-  pnpm start
-  ```
-- Set `PAYLOAD_SECRET` (and optionally `PORT`, `DATABASE_URL`, `MEDIA_DIR`) in your environment variables, and ensure `apps/cms/data` and `apps/cms/media` (or your configured paths) are on persistent storage.
+```bash
+docker build -t my-site .
+docker run -d -p 3000:3000 \
+  -v payload_data:/app/data \
+  -v payload_media:/app/media \
+  my-site
+```
+
+- **Persistent storage:** Always mount **`/app/data`** (SQLite DB + auto-generated `.payload-secret`) and **`/app/media`** (uploads).
+- **Single container:** Keep `1` replica with stop-before-start / recreate (no overlapping containers sharing SQLite).
+- **Keep volumes:** Never run `docker compose down -v` in production (`-v` deletes the DB & media volumes).

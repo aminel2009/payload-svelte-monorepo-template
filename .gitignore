@@ -11,21 +11,22 @@ node_modules
 !.env.test
 
 # Next.js / Payload
-.next
-out
+/apps/cms/.next
+/apps/cms/out
 *.tsbuildinfo
 next-env.d.ts
 /apps/cms/media
 /apps/cms/data
 /apps/cms/backups
+.payload-secret
 *.db
 *.db-wal
 *.db-shm
 *.db-journal
 
 # SvelteKit / Vite
-.svelte-kit
-build
+/apps/web/.svelte-kit
+/apps/web/build
 .output
 .vercel
 .netlify

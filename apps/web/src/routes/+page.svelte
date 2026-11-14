@@ -331,14 +331,13 @@ Tip: Run "pnpm dev" from the monorepo root and reload this page.</code
 				<p class="mt-2 mb-4 text-neutral-400">
 					Lightweight
 					<strong class="text-neutral-200">Payload 3 (SQLite) + SvelteKit 3</strong>
-					monorepo designed for single-container Docker or pnpm deployments.
+					monorepo designed for local pnpm development and single-container Docker deployments.
 				</p>
 
 				<h3 class="mt-7 mb-2.5 text-[17px] font-semibold text-neutral-200">1. Quick Start</h3>
 				<pre
 					class="my-3 overflow-x-auto rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3.5 font-mono text-[13px] text-neutral-200"><code
-						>{`cp .env.example .env   # Configure PAYLOAD_SECRET & DATABASE_URL
-pnpm install
+						>{`pnpm install
 pnpm dev               # Unified dev server on :3000 (Web at /, CMS at /_/*)`}</code
 					></pre>
 

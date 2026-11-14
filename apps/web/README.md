@@ -7,7 +7,6 @@ Minimal, maintainable **SvelteKit 3 + Svelte 5 (Runes) + Vite 8 + Tailwind CSS v
 Requires **Node.js ≥ 22.23** (or ≥ 24.22) and **pnpm**. Run commands from the monorepo root:
 
 ```bash
-cp .env.example .env     # Configure PORT & PAYLOAD_SECRET
 pnpm install
 pnpm dev                 # Starts Web (/) + Payload CMS (/_/*) on http://localhost:3000
 pnpm generate            # Regenerates Payload types/importmap + src/lib/gql/generated.ts

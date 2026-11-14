@@ -2,6 +2,7 @@ import '../src/lib/loadEnv.js'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+import readline from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 
 interface LibsqlClient {
@@ -79,20 +80,41 @@ function removeSidecars(dbPath: string): string[] {
   return removed
 }
 
-function clearDb(dbPath: string): void {
-  const removed: string[] = []
-  if (fs.existsSync(dbPath)) {
-    fs.rmSync(dbPath, { force: true })
-    removed.push(dbPath)
+function assertNotProduction(action: string): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`Refusing to run db:${action} when NODE_ENV=production.`)
   }
-  removed.push(...removeSidecars(dbPath))
+}
 
-  if (removed.length === 0) {
+async function confirmPrompt(question: string): Promise<boolean> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+  try {
+    const answer = await rl.question(question)
+    const normalized = answer.trim().toLowerCase()
+    return normalized === 'y' || normalized === 'yes'
+  } finally {
+    rl.close()
+  }
+}
+
+async function clearDb(dbPath: string): Promise<void> {
+  assertNotProduction('clear')
+
+  const targets = [dbPath, ...['-wal', '-shm', '-journal'].map((suffix) => `${dbPath}${suffix}`)]
+  const existing = targets.filter((file) => fs.existsSync(file))
+  if (existing.length === 0) {
     console.log(`No SQLite database found at ${displayPath(dbPath)}.`)
     return
   }
 
-  for (const file of removed) {
+  const confirmed = await confirmPrompt(`Delete SQLite database at ${displayPath(dbPath)}? (y/N) `)
+  if (!confirmed) {
+    console.log('Aborted.')
+    return
+  }
+
+  for (const file of existing) {
+    fs.rmSync(file, { force: true })
     console.log(`Removed ${displayPath(file)}`)
   }
 }
@@ -153,6 +175,8 @@ function findLatestBackup(): string | undefined {
 }
 
 async function restoreDb(dbPath: string, inArg?: string): Promise<void> {
+  assertNotProduction('restore')
+
   const backupPath = inArg ? resolveUserPath(inArg) : findLatestBackup()
   if (!backupPath) {
     throw new Error(
@@ -180,6 +204,16 @@ async function restoreDb(dbPath: string, inArg?: string): Promise<void> {
     client.close()
   }
 
+  if (fs.existsSync(dbPath)) {
+    const ext = path.extname(dbPath) || '.db'
+    const baseName = path.basename(dbPath, ext)
+    const preRestorePath = path.join(
+      backupsDir,
+      `${baseName}-pre-restore-${formatTimestamp()}${ext}`,
+    )
+    await backupDb(dbPath, preRestorePath)
+  }
+
   fs.mkdirSync(path.dirname(dbPath), { recursive: true })
   const tempPath = `${dbPath}.restore.tmp`
   try {
@@ -203,7 +237,7 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'clear':
-      clearDb(dbPath)
+      await clearDb(dbPath)
       break
     case 'backup':
       await backupDb(dbPath, target)

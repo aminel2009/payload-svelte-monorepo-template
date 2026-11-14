@@ -11,7 +11,7 @@ services:
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-file:/app/data/payload.db}
       MEDIA_DIR: /app/media
-      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-}
       PUBLIC_GRAPHQL_ENDPOINT: ${PUBLIC_GRAPHQL_ENDPOINT:-/_/api/graphql}
     volumes:
       - payload_data:/app/data
