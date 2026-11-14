@@ -29,7 +29,16 @@ process.env.PAYLOAD_SECRET ||= 'migration-check'
 const { getPayload } = await import('payload')
 const { default: config } = await import('../src/payload.config.js')
 
-const payload = await getPayload({ config: await config })
+const resolvedConfig = await config
+const payload = await getPayload({
+  config: {
+    ...resolvedConfig,
+    typescript: {
+      ...resolvedConfig.typescript,
+      autoGenerate: false,
+    },
+  },
+})
 const adapter = payload.db as unknown as DrizzleMigrationAdapter
 
 try {

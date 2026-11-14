@@ -1,9 +1,7 @@
-import * as migration_20261113_085253_initial from './20261113_085253_initial'
+import type { MigrateDownArgs, MigrateUpArgs } from '@payloadcms/db-sqlite'
 
-export const migrations = [
-  {
-    up: migration_20261113_085253_initial.up,
-    down: migration_20261113_085253_initial.down,
-    name: '20261113_085253_initial',
-  },
-]
+export const migrations: Array<{
+  down: (args: MigrateDownArgs) => Promise<void>
+  name: string
+  up: (args: MigrateUpArgs) => Promise<void>
+}> = []

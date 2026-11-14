@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "init": "node scripts/init.mjs",
     "dev": "node server.mjs --dev",
     "build": "pnpm --filter cms build && pnpm --filter web build",
     "start": "node server.mjs",
