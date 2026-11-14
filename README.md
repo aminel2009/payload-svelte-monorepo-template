@@ -51,6 +51,18 @@ pnpm dev               # Starts Web (/) + CMS (/_/*) on one port (:3000)
    ```
    `pnpm check` and `pnpm build` automatically verify that `apps/cms/src/migrations/` is in sync with your collections, and production container startup applies pending `prodMigrations` automatically.
 
+### Adding CMS Plugins & Svelte Packages
+
+- **Payload CMS (`apps/cms`):**
+  ```bash
+  pnpm --filter cms add <package>     # e.g. @payloadcms/plugin-seo
+  ```
+  Register plugins in `apps/cms/src/payload.config.ts`, then run `pnpm generate` (and `pnpm migrate:create` if it adds collections or fields).
+- **SvelteKit (`apps/web`):**
+  ```bash
+  pnpm --filter web add <package>     # Runtime / UI packages (use -D only for dev/build tools)
+  ```
+
 ---
 
 ## 3. Monorepo Commands
